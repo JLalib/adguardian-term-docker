@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  adguardian:
+    image: lissy93/adguardian:latest
+    container_name: adguardian
+    stdin_open: true
+    tty: true
+    environment:
+      # URL AdGuard Home (reemplaza IP/puerto)
+      - ADGUARD_HOST=http://192.168.1.10:3000
+      # Credenciales (usa USER+PASS o KEY, no ambas)
+      - ADGUARD_USER=admin
+      - ADGUARD_PASS=tu_contraseña_fuerte
+      # O si usas API key:
+      # - ADGUARD_KEY=tu_api_key_aqui
