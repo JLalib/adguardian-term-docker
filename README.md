@@ -8,21 +8,23 @@
 
 **AdGuardian-Term** es un dashboard de monitoreo terminal (TUI) construido en **Rust** para visualizar en tiempo real el tráfico DNS, estadísticas de bloqueo y consultas de una instancia **AdGuard Home** autohospedada. Permite monitoreo eficiente sin interfaz web, e incluso es embebible en navegadores web vía **ttyd**.
 
-Es la herramienta perfecta para homelabs sin IU web accesible, ofreciendo un dashboard TUI ultra-rápido, multi-threaded async, con actualizaciones cada 1-2 segundos y navegación keyboard-friendly.
+Es la herramienta perfecta para homelabs sin IU web accesible, ofreciendo un dashboard TUI terminal ultra-rápido, multi-threaded async (zero lag), con actualizaciones automáticas cada 1-2 segundos.
 
 ## ✨ Características principales
 
 - 📊 **Monitor real-time estadísticas AdGuard Home**: queries totales, bloqueadas, % tasa bloqueo, tiempo promedio
 - 📋 **Query log interactivo**: listado scrolleable y filtrable (cliente, dominio, estado)
-- 🔍 **Upstream DNS tracking**: visibilidad per-query del resolver DNS usado
+- 🔍 **Upstream DNS tracking**: muestra qué upstream DNS manejó cada query (v1.5+)
 - 📈 **Charts ASCII históricos**: gráficos queries over time con escala automática
 - 🌐 **Integración ttyd**: embeber TUI en navegador web para acceso remoto
 - ⚡ **Rust ultra-rápido**: multi-threaded async, zero lag, performance excelente
-- ⌨️ **Keyboard-friendly navigation**: arrow keys, Page Up/Down, Ctrl+C
-- 🌓 **Dark/Light terminal modes**: respeta theme del terminal, eye-friendly
+- ⌨️ **Keyboard-friendly navigation**: arrow keys, Page Up/Down, Ctrl+C para salir
+- 🌓 **Dark/Light terminal modes**: respeta terminal theme, eye-friendly, auto-adapt
 - 🐳 **Docker image multi-stage**: imagen optimizada `lissy93/adguardian`, multiarch
-- 🔐 **Auth via env vars**: AdGuard user, pass, API key via flags `-e`
+- 🔐 **Auth via env vars**: AdGuard user, pass, API key via `-e` flags
 - 📦 **MIT open source**: código abierto, comunidad 1.5K+ stars, activamente mantenido
+- 🏥 **Health checks** incluidos
+- 🔄 **CI/CD pipeline** automatizado
 
 ## 📋 Requisitos del sistema
 
@@ -32,22 +34,21 @@ Es la herramienta perfecta para homelabs sin IU web accesible, ofreciendo un das
 - Credenciales AdGuard (usuario, contraseña o API key)
 - Terminal emulator moderno (para TUI)
 - Opcional: **ttyd** (para exponer en navegador)
-- Opcional: **docker-compose** si quieres Compose file
+- Opcional: **docker-compose** si quieres usar Compose file
 
 ## 🐳 Instalación
 
 ### Opción 1: Docker run simple (recomendado)
 
 ```bash
+# Con usuario y contraseña
 docker run -it \
   -e ADGUARD_HOST=http://192.168.1.10:3000 \
   -e ADGUARD_USER=admin \
   -e ADGUARD_PASS=tu_contraseña \
   lissy93/adguardian
-```
 
-```bash
-# Si usas API key en lugar de pass:
+# Con API key (más seguro)
 docker run -it \
   -e ADGUARD_HOST=http://192.168.1.10:3000 \
   -e ADGUARD_KEY=tu_api_key \
@@ -59,6 +60,7 @@ docker run -it \
 ```bash
 cat > docker-compose.yml << 'EOF'
 version: '3.8'
+
 services:
   adguardian:
     image: lissy93/adguardian:latest
@@ -74,6 +76,7 @@ services:
       # O si usas API key:
       # - ADGUARD_KEY=tu_api_key_aqui
 EOF
+
 docker compose up -it
 ```
 
@@ -93,18 +96,18 @@ docker run -d \
 ## ⚙️ Configuración
 
 1. **ADGUARD_HOST** (obligatorio): URL completa de tu instancia AdGuard Home (ej: `http://192.168.1.10:3000`)
-2. **ADGUARD_USER** + **ADGUARD_PASS**: Credenciales de acceso a AdGuard Home
-3. **ADGUARD_KEY** (alternativa): API key generada en AdGuard Home Settings → API (más seguro que password)
-4. **Puerto 7681** (solo tag `:ttyd`): Puerto expuesto para acceso web vía ttyd
-
-> ⚠️ Usa **USER+PASS** **O** **KEY**, nunca ambas simultáneamente.
+2. **Autenticación** (elige una):
+   - `ADGUARD_USER` + `ADGUARD_PASS`: usuario y contraseña de AdGuard Home
+   - `ADGUARD_KEY`: API key generada en AdGuard Home Settings → API
+3. **stdin_open: true** y **tty: true**: requeridos para modo interactivo TUI
+4. **Puerto 7681**: solo necesario si usas la imagen `:ttyd` para acceso web
 
 ## 🚀 Primeros pasos
 
 1. **Encontrar URL y credenciales AdGuard Home**
-   - Localiza IP AdGuard: `192.168.1.10:3000` (típico)
+   - Localiza IP AdGuard: típicamente `192.168.1.10:3000`
    - Abre web UI: `http://192.168.1.10:3000`
-   - Si tiene contraseña, anótala (o crea API key en Settings)
+   - Si tiene contraseña, anótala (o crea API key en Settings → API)
 
 2. **Ejecutar AdGuardian-Term**
    ```bash
@@ -124,8 +127,8 @@ docker run -d \
 4. **Navegar con teclado**
    - `Arrow Keys` (↑↓←→): navegación tablas, scroll arriba/abajo, izq/der
    - `Page Up/Page Down`: scroll rápido tabla
-   - `Ctrl+C`: salir AdGuardian-Term
-   - `Tab`: cambiar panels (si multiselect)
+   - `Ctrl+C`: Salir AdGuardian-Term
+   - `Tab`: Cambiar panels (si multiselect)
 
 5. **Ver query log detallado**
    - Tabla central muestra: Time, Domain, Client IP, Status
@@ -134,7 +137,7 @@ docker run -d \
 
 6. **Upstream DNS column (v1.5+)**
    - Query log tabla incluye upstream DNS resolver usado
-   - Útil ver qué resolver maneja cada query
+   - Útil para ver qué resolver maneja cada query
    - En pantallas pequeñas, upstream puede esconderse (responsive)
 
 7. **Charts históricos (parte derecha)**
@@ -209,7 +212,7 @@ cargo build --release
 
 # Monitorear consumo (ultra-ligero)
 docker stats adguardian
-# Típicamente: ~10-30 MB RAM, <1% CPU
+# Típicamente: ~50-200MB RAM, <1% CPU
 
 # Cambiar env vars dinámicamente
 docker stop adguardian
@@ -222,10 +225,12 @@ docker run -it \
 
 ## 📝 Licencia
 
-MIT License - Código abierto, libre para uso personal y comercial.
+MIT License - Código abierto, comunidad 1.5K+ stars, activamente mantenido.
 
 Ver [LICENSE](https://github.com/Lissy93/AdGuardian-Term/blob/main/LICENSE) en el repositorio oficial.
 
 ---
 
 > 📖 **Basado en el post:** [Cómo instalar AdGuardian-Term en Docker - Dashboard TUI monitoreo real-time AdGuard Home autohospedado](https://genbyte.blogspot.com/2026/08/como-instalar-adguardian-term-en-docker.html)
+>
+> 🐳 **Imagen Docker:** `lissy93/adguardian` | 📦 **GitHub:** [Lissy93/AdGuardian-Term](https://github.com/Lissy93/AdGuardian-Term)

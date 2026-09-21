@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   adguardian:
     image: lissy93/adguardian:latest
@@ -13,3 +14,4 @@ services:
       - ADGUARD_PASS=tu_contraseña_fuerte
       # O si usas API key:
       # - ADGUARD_KEY=tu_api_key_aqui
+    restart: unless-stopped
